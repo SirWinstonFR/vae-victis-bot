@@ -3,16 +3,11 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ActionRowBuilder,
-  ContainerBuilder,
-  TextDisplayBuilder,
-  SeparatorBuilder,
-  SeparatorSpacingSize,
   MessageFlags,
 } = require('discord.js');
 const { roles, channels } = require('../config/config');
 const { generateCaptcha } = require('../utils/captcha');
 
-// Stockage temporaire des codes captcha : Map<userId, { code, attempts }>
 const captchaCodes = new Map();
 
 module.exports = {
@@ -33,15 +28,6 @@ module.exports = {
 
     const attachment = new AttachmentBuilder(buffer, { name: 'captcha.png' });
 
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-          `## ⚔️ Bienvenue ${member} !\n` +
-          `Pour accéder au serveur **Vae Victis**, entre le code affiché ci-dessous.\n` +
-          `*3 essais maximum. Insensible à la casse.*`
-        )
-      );
-
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`captcha_reply:${member.id}`)
@@ -49,10 +35,11 @@ module.exports = {
         .setStyle(ButtonStyle.Primary),
     );
 
+    // Envoi classique (sans Components V2) pour que l'image s'affiche correctement
     await verifChannel.send({
-      components: [container, row],
+      content: `## ⚔️ Bienvenue ${member} !\nPour accéder au serveur **Vae Victis**, entre le code affiché sur l'image ci-dessous.\n*3 essais maximum. Insensible à la casse.*`,
       files: [attachment],
-      flags: MessageFlags.IsComponentsV2,
+      components: [row],
     });
 
     console.log(`[ARRIVEE] ${member.user.tag} — captcha envoyé (code: ${code})`);
