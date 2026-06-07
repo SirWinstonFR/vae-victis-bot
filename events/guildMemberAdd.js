@@ -1,8 +1,5 @@
 const {
   AttachmentBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ActionRowBuilder,
 } = require('discord.js');
 const { roles, channels } = require('../config/config');
 const { generateCaptcha } = require('../utils/captcha');
@@ -19,7 +16,6 @@ module.exports = {
 
     // 2. Générer le captcha
     const { code, buffer } = generateCaptcha(5);
-    captchaCodes.set(member.id, { code, attempts: 0 });
 
     // 3. Envoyer dans le channel vérification
     const verifChannel = member.guild.channels.cache.get(channels.verification);
@@ -27,13 +23,16 @@ module.exports = {
 
     const attachment = new AttachmentBuilder(buffer, { name: 'captcha.png' });
 
-    await verifChannel.send({
+    const msg = await verifChannel.send({
       content:
         `## ⚔️ Bienvenue ${member} !\n` +
         `Pour accéder au serveur **Vae Victis**, tape directement le code affiché sur l'image ci-dessous.\n` +
         `*3 essais maximum. Insensible à la casse.*`,
       files: [attachment],
     });
+
+    // Stocker le code ET l'ID du message captcha
+    captchaCodes.set(member.id, { code, attempts: 0, messageId: msg.id });
 
     console.log(`[ARRIVEE] ${member.user.tag} — captcha envoyé (code: ${code})`);
   },
