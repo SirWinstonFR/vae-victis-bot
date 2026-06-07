@@ -17,7 +17,7 @@ module.exports = {
     const roleNV = member.guild.roles.cache.get(roles.nonVerifie);
     if (roleNV) await member.roles.add(roleNV).catch(console.error);
 
-    // 2. Générer le captcha (synchrone avec canvas)
+    // 2. Générer le captcha
     const { code, buffer } = generateCaptcha(5);
     captchaCodes.set(member.id, { code, attempts: 0 });
 
@@ -27,17 +27,12 @@ module.exports = {
 
     const attachment = new AttachmentBuilder(buffer, { name: 'captcha.png' });
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`captcha_reply:${member.id}`)
-        .setLabel('✍️ Entrer le code')
-        .setStyle(ButtonStyle.Primary),
-    );
-
     await verifChannel.send({
-      content: `## ⚔️ Bienvenue ${member} !\nPour accéder au serveur **Vae Victis**, entre le code affiché sur l'image ci-dessous.\n*3 essais maximum. Insensible à la casse.*`,
+      content:
+        `## ⚔️ Bienvenue ${member} !\n` +
+        `Pour accéder au serveur **Vae Victis**, tape directement le code affiché sur l'image ci-dessous.\n` +
+        `*3 essais maximum. Insensible à la casse.*`,
       files: [attachment],
-      components: [row],
     });
 
     console.log(`[ARRIVEE] ${member.user.tag} — captcha envoyé (code: ${code})`);

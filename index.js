@@ -6,6 +6,7 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent, // nécessaire pour lire les messages dans #vérification
     GatewayIntentBits.DirectMessages,
   ],
   partials: [Partials.Channel, Partials.Message],
@@ -13,7 +14,6 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// Chargement des handlers
 require('./handlers/commandHandler')(client);
 require('./handlers/eventHandler')(client);
 

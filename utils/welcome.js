@@ -2,7 +2,12 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ActionRowBuilder,
-  EmbedBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  ThumbnailBuilder,
+  MessageFlags,
 } = require('discord.js');
 
 const BANNERS = [
@@ -24,23 +29,28 @@ async function sendWelcomeGeneral(member) {
   const channel = guild.channels.cache.get('1512195689952841859');
   if (!channel) return console.error('[WELCOME] Channel général introuvable');
 
-  // Bannière aléatoire 50/50
   const banner = BANNERS[Math.floor(Math.random() * BANNERS.length)];
 
-  const embed = new EmbedBuilder()
-    .setColor('#c9a84c')
-    .setImage(banner)
-    .setDescription(
-      `## ⚔️ Bienvenue ${member} !\n\n` +
-      `**${member.user.username}** vient de rejoindre **Vae Victis** !\n\n` +
-      `Nous te souhaitons la bienvenue et t'invitons à prendre le temps de lire l'ensemble des informations avant de commencer.`
+  const container = new ContainerBuilder()
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `## ⚔️ Bienvenue ${member} !\n` +
+        `**${member.user.username}** vient de rejoindre **Vae Victis** !\n\n` +
+        `Nous te souhaitons la bienvenue et t'invitons à prendre le temps de lire l'ensemble des informations avant de commencer.`
+      )
     )
-    .setFooter({ text: 'Vae Victis', iconURL: member.guild.iconURL() })
-    .setThumbnail(member.user.displayAvatarURL({ size: 128 }));
-
-  const footerEmbed = new EmbedBuilder()
-    .setImage(FOOTER_BANNER)
-    .setColor('#c9a84c');
+    .addSeparatorComponents(
+      new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`${banner}`)
+    )
+    .addSeparatorComponents(
+      new SeparatorBuilder().setDivider(false).setSpacing(SeparatorSpacingSize.Small)
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`${FOOTER_BANNER}`)
+    );
 
   const row1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -65,11 +75,11 @@ async function sendWelcomeGeneral(member) {
   );
 
   await channel.send({
-    embeds: [embed, footerEmbed],
-    components: [row1, row2],
+    components: [container, row1, row2],
+    flags: MessageFlags.IsComponentsV2,
   });
 }
 
-async function sendWelcomeDM() {} // plus utilisé
+async function sendWelcomeDM() {}
 
 module.exports = { sendWelcomeDM, sendWelcomeGeneral };
