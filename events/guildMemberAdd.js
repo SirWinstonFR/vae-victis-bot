@@ -12,7 +12,7 @@ const {
 const { roles, channels } = require('../config/config');
 const { generateCaptcha } = require('../utils/captcha');
 
-// Stockage temporaire des codes captcha en mémoire : Map<userId, code>
+// Stockage temporaire des codes captcha : Map<userId, { code, attempts }>
 const captchaCodes = new Map();
 
 module.exports = {
@@ -24,7 +24,7 @@ module.exports = {
     if (roleNV) await member.roles.add(roleNV).catch(console.error);
 
     // 2. Générer le captcha
-    const { code, buffer } = generateCaptcha(5);
+    const { code, buffer } = await generateCaptcha(5);
     captchaCodes.set(member.id, { code, attempts: 0 });
 
     // 3. Envoyer dans le channel vérification
@@ -37,14 +37,9 @@ module.exports = {
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
           `## ⚔️ Bienvenue ${member} !\n` +
-          `Pour accéder au serveur **Vae Victis**, entre le code affiché ci-dessous.`
+          `Pour accéder au serveur **Vae Victis**, entre le code affiché ci-dessous.\n` +
+          `*3 essais maximum. Insensible à la casse.*`
         )
-      )
-      .addSeparatorComponents(
-        new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-      )
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`*3 essais maximum. Le code est insensible à la casse.*`)
       );
 
     const row = new ActionRowBuilder().addComponents(
@@ -60,9 +55,8 @@ module.exports = {
       flags: MessageFlags.IsComponentsV2,
     });
 
-    console.log(`[ARRIVEE] ${member.user.tag} — captcha envoyé`);
+    console.log(`[ARRIVEE] ${member.user.tag} — captcha envoyé (code: ${code})`);
   },
 
-  // Export de la Map pour y accéder depuis interactionCreate
   captchaCodes,
 };
