@@ -3,7 +3,6 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ActionRowBuilder,
-  MessageFlags,
 } = require('discord.js');
 const { roles, channels } = require('../config/config');
 const { generateCaptcha } = require('../utils/captcha');
@@ -18,8 +17,8 @@ module.exports = {
     const roleNV = member.guild.roles.cache.get(roles.nonVerifie);
     if (roleNV) await member.roles.add(roleNV).catch(console.error);
 
-    // 2. Générer le captcha
-    const { code, buffer } = await generateCaptcha(5);
+    // 2. Générer le captcha (synchrone avec canvas)
+    const { code, buffer } = generateCaptcha(5);
     captchaCodes.set(member.id, { code, attempts: 0 });
 
     // 3. Envoyer dans le channel vérification
@@ -35,7 +34,6 @@ module.exports = {
         .setStyle(ButtonStyle.Primary),
     );
 
-    // Envoi classique (sans Components V2) pour que l'image s'affiche correctement
     await verifChannel.send({
       content: `## ⚔️ Bienvenue ${member} !\nPour accéder au serveur **Vae Victis**, entre le code affiché sur l'image ci-dessous.\n*3 essais maximum. Insensible à la casse.*`,
       files: [attachment],

@@ -1,10 +1,6 @@
-const Jimp = require('jimp');
+const { createCanvas } = require('canvas');
 
-/**
- * Génère une image captcha sans dépendances système
- * Retourne { code, buffer }
- */
-async function generateCaptcha(length = 5) {
+function generateCaptcha(length = 5) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
   for (let i = 0; i < length; i++) {
@@ -13,49 +9,61 @@ async function generateCaptcha(length = 5) {
 
   const width  = 200;
   const height = 70;
+  const canvas = createCanvas(width, height);
+  const ctx    = canvas.getContext('2d');
 
-  // Créer l'image avec fond sombre
-  const image = new Jimp(width, height, 0x1a1a2eff);
+  // Fond dégradé sombre
+  const grad = ctx.createLinearGradient(0, 0, width, height);
+  grad.addColorStop(0, '#1a1a2e');
+  grad.addColorStop(1, '#16213e');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
 
-  // Charger la font
-  const font = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
-
-  // Bruit de fond : pixels aléatoires
-  for (let i = 0; i < 500; i++) {
-    const x = Math.floor(Math.random() * width);
-    const y = Math.floor(Math.random() * height);
-    const color = Math.random() > 0.5 ? 0xc9a84c44 : 0xffffff22;
-    image.setPixelColor(color, x, y);
+  // Lignes de bruit
+  for (let i = 0; i < 8; i++) {
+    ctx.strokeStyle = `rgba(${Math.random()*200|0}, ${Math.random()*200|0}, ${Math.random()*200|0}, 0.4)`;
+    ctx.lineWidth = Math.random() * 2 + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(Math.random() * width, Math.random() * height);
+    ctx.lineTo(Math.random() * width, Math.random() * height);
+    ctx.stroke();
   }
 
-  // Lignes de bruit horizontales
-  for (let i = 0; i < 5; i++) {
-    const y = Math.floor(Math.random() * height);
-    for (let x = 0; x < width; x++) {
-      if (Math.random() > 0.5) image.setPixelColor(0xffffff33, x, y);
-    }
+  // Points de bruit
+  for (let i = 0; i < 60; i++) {
+    ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.3})`;
+    ctx.beginPath();
+    ctx.arc(Math.random() * width, Math.random() * height, Math.random() * 2, 0, Math.PI * 2);
+    ctx.fill();
   }
 
-  // Écrire le code centré
-  const textWidth = Jimp.measureText(font, code);
-  const x = (width - textWidth) / 2;
-  const y = (height - 32) / 2;
-  image.print(font, x, y, code);
+  // Lettres déformées
+  const letterSpacing = (width - 30) / length;
+  for (let i = 0; i < code.length; i++) {
+    const x = 20 + i * letterSpacing + Math.random() * 8 - 4;
+    const y = height / 2 + Math.random() * 12 - 6;
+    const angle = (Math.random() - 0.5) * 0.4;
+    const size  = 28 + Math.random() * 8;
 
-  // Légère perturbation pixel par pixel (effet déformation)
-  for (let px = 0; px < width; px++) {
-    const shift = Math.floor(Math.sin(px / 20) * 3);
-    for (let py = 0; py < height; py++) {
-      const srcY = py + shift;
-      if (srcY >= 0 && srcY < height) {
-        const col = image.getPixelColor(px, srcY);
-        image.setPixelColor(col, px, py);
-      }
-    }
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.font = `bold ${size}px sans-serif`;
+
+    const colors = ['#c9a84c', '#ffffff', '#e0c97a', '#f0f0f0'];
+    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(code[i], 0, 0);
+    ctx.restore();
   }
 
-  const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
-  return { code, buffer };
+  // Bordure dorée
+  ctx.strokeStyle = '#c9a84c44';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(1, 1, width - 2, height - 2);
+
+  return { code, buffer: canvas.toBuffer('image/png') };
 }
 
 module.exports = { generateCaptcha };
