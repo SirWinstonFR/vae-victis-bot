@@ -1,16 +1,68 @@
-const { roles } = require('../config/config');
-const { sendWelcomeDM } = require('../utils/welcome');
+const {
+  AttachmentBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  MessageFlags,
+} = require('discord.js');
+const { roles, channels } = require('../config/config');
+const { generateCaptcha } = require('../utils/captcha');
+
+// Stockage temporaire des codes captcha en mémoire : Map<userId, code>
+const captchaCodes = new Map();
 
 module.exports = {
   name: 'guildMemberAdd',
+
   async execute(member, client) {
     // 1. Attribuer le rôle "non vérifié"
-    const role = member.guild.roles.cache.get(roles.nonVerifie);
-    if (role) await member.roles.add(role).catch(console.error);
+    const roleNV = member.guild.roles.cache.get(roles.nonVerifie);
+    if (roleNV) await member.roles.add(roleNV).catch(console.error);
 
-    // 2. Envoyer le MP de bienvenue + FAQ
-    await sendWelcomeDM(member);
+    // 2. Générer le captcha
+    const { code, buffer } = generateCaptcha(5);
+    captchaCodes.set(member.id, { code, attempts: 0 });
 
-    console.log(`[ARRIVEE] ${member.user.tag} a rejoint le serveur`);
+    // 3. Envoyer dans le channel vérification
+    const verifChannel = member.guild.channels.cache.get(channels.verification);
+    if (!verifChannel) return console.error('[CAPTCHA] Channel vérification introuvable');
+
+    const attachment = new AttachmentBuilder(buffer, { name: 'captcha.png' });
+
+    const container = new ContainerBuilder()
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `## ⚔️ Bienvenue ${member} !\n` +
+          `Pour accéder au serveur **Vae Victis**, entre le code affiché ci-dessous.`
+        )
+      )
+      .addSeparatorComponents(
+        new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+      )
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`*3 essais maximum. Le code est insensible à la casse.*`)
+      );
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`captcha_reply:${member.id}`)
+        .setLabel('✍️ Entrer le code')
+        .setStyle(ButtonStyle.Primary),
+    );
+
+    await verifChannel.send({
+      components: [container, row],
+      files: [attachment],
+      flags: MessageFlags.IsComponentsV2,
+    });
+
+    console.log(`[ARRIVEE] ${member.user.tag} — captcha envoyé`);
   },
+
+  // Export de la Map pour y accéder depuis interactionCreate
+  captchaCodes,
 };

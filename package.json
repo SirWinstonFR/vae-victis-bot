@@ -9,6 +9,7 @@
     "deploy": "node handlers/deploy-commands.js"
   },
   "dependencies": {
+    "canvas": "^2.11.2",
     "discord.js": "^14.16.0",
     "dotenv": "^16.4.5"
   }
