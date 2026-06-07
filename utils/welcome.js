@@ -6,7 +6,8 @@ const {
   TextDisplayBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
-  ThumbnailBuilder,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
   MessageFlags,
 } = require('discord.js');
 
@@ -32,6 +33,11 @@ async function sendWelcomeGeneral(member) {
   const banner = BANNERS[Math.floor(Math.random() * BANNERS.length)];
 
   const container = new ContainerBuilder()
+    .addMediaGalleryComponents(
+      new MediaGalleryBuilder().addItems(
+        new MediaGalleryItemBuilder().setURL(banner)
+      )
+    )
     .addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
         `## ⚔️ Bienvenue ${member} !\n` +
@@ -42,14 +48,10 @@ async function sendWelcomeGeneral(member) {
     .addSeparatorComponents(
       new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
     )
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`${banner}`)
-    )
-    .addSeparatorComponents(
-      new SeparatorBuilder().setDivider(false).setSpacing(SeparatorSpacingSize.Small)
-    )
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`${FOOTER_BANNER}`)
+    .addMediaGalleryComponents(
+      new MediaGalleryBuilder().addItems(
+        new MediaGalleryItemBuilder().setURL(FOOTER_BANNER)
+      )
     );
 
   const row1 = new ActionRowBuilder().addComponents(
