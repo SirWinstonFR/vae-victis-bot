@@ -17,9 +17,6 @@ const {
 const CHANNEL_RESA  = '1512195690523000832';
 const CHANNEL_STAFF = '1512195689176764508';
 
-// Map<userId, { choix1_nom, choix1_apparence, choix2_nom, choix2_apparence }>
-const pendingModal = new Map();
-
 // Map<staffMessageId, { userId, userTag, choices: [{nom, apparence}x3] }>
 const pendingResa = new Map();
 
@@ -38,7 +35,8 @@ async function sendResaPanel(channel) {
         `> Pour chaque choix, indique le nom du dieu et le nom de l'apparence souhaitée.\n` +
         `> Le staff examine tes propositions et sélectionne celle qui équilibre le mieux les factions.\n` +
         `> Tu seras notifié dans ce salon dès que ta réservation est traitée.\n\n` +
-        `*Assure-toi d'avoir lu le contexte et les factions avant de réserver.*`
+        `*Format attendu : \`Nom du dieu | Nom de l'apparence\`*\n` +
+        `*Exemple : \`Athéna | Margot Robbie\`*`
       )
     )
     .addSeparatorComponents(
@@ -58,43 +56,35 @@ async function sendResaPanel(channel) {
   });
 }
 
-// ── Modal 1 : Choix 1 + 2 ─────────────────────────────────────────────────
-async function openResaModal1(interaction) {
+// ── Modal unique ───────────────────────────────────────────────────────────
+async function openResaModal(interaction) {
   const modal = new ModalBuilder()
-    .setCustomId('resa_modal1')
-    .setTitle('⚔️ Réservation — Choix 1 & 2');
+    .setCustomId('resa_submit')
+    .setTitle('⚔️ Réservation de personnage');
 
   modal.addComponents(
     new ActionRowBuilder().addComponents(
       new TextInputBuilder()
-        .setCustomId('choix1_nom')
-        .setLabel('1er choix — Nom du dieu')
+        .setCustomId('choix1')
+        .setLabel('1er choix — Dieu | Apparence')
         .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Ex: Athéna')
+        .setPlaceholder('Ex: Athéna | Margot Robbie')
         .setRequired(true)
     ),
     new ActionRowBuilder().addComponents(
       new TextInputBuilder()
-        .setCustomId('choix1_apparence')
-        .setLabel('1er choix — Nom de l\'apparence')
+        .setCustomId('choix2')
+        .setLabel('2ème choix — Dieu | Apparence')
         .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Ex: Margot Robbie')
+        .setPlaceholder('Ex: Zeus | Henry Cavill')
         .setRequired(true)
     ),
     new ActionRowBuilder().addComponents(
       new TextInputBuilder()
-        .setCustomId('choix2_nom')
-        .setLabel('2ème choix — Nom du dieu')
+        .setCustomId('choix3')
+        .setLabel('3ème choix — Dieu | Apparence')
         .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Ex: Zeus')
-        .setRequired(true)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder()
-        .setCustomId('choix2_apparence')
-        .setLabel('2ème choix — Nom de l\'apparence')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Ex: Henry Cavill')
+        .setPlaceholder('Ex: Poséidon | Jason Momoa')
         .setRequired(true)
     ),
   );
@@ -102,56 +92,23 @@ async function openResaModal1(interaction) {
   await interaction.showModal(modal);
 }
 
-// ── Traitement Modal 1 → Modal 2 ──────────────────────────────────────────
-async function handleModal1(interaction) {
-  // Stocker les choix 1 & 2
-  pendingModal.set(interaction.user.id, {
-    choix1_nom:       interaction.fields.getTextInputValue('choix1_nom'),
-    choix1_apparence: interaction.fields.getTextInputValue('choix1_apparence'),
-    choix2_nom:       interaction.fields.getTextInputValue('choix2_nom'),
-    choix2_apparence: interaction.fields.getTextInputValue('choix2_apparence'),
-  });
-
-  // Ouvrir la modal 2 DIRECTEMENT (pas de defer avant showModal)
-  const modal = new ModalBuilder()
-    .setCustomId('resa_modal2')
-    .setTitle('⚔️ Réservation — Choix 3');
-
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder()
-        .setCustomId('choix3_nom')
-        .setLabel('3ème choix — Nom du dieu (priorité basse)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Ex: Poséidon')
-        .setRequired(true)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder()
-        .setCustomId('choix3_apparence')
-        .setLabel('3ème choix — Nom de l\'apparence')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Ex: Jason Momoa')
-        .setRequired(true)
-    ),
-  );
-
-  // showModal répond à l'interaction — pas besoin de reply/defer
-  await interaction.showModal(modal);
+// ── Parsing d'un champ "Nom | Apparence" ──────────────────────────────────
+function parseChoix(value) {
+  const parts = value.split('|').map(s => s.trim());
+  return {
+    nom:       parts[0] || value.trim(),
+    apparence: parts[1] || '—',
+  };
 }
 
-// ── Traitement Modal 2 → envoi staff ──────────────────────────────────────
-async function handleModal2(interaction) {
+// ── Traitement soumission modal ────────────────────────────────────────────
+async function handleResaSubmit(interaction) {
   await interaction.deferReply({ flags: 64 });
 
-  const stored = pendingModal.get(interaction.user.id);
-  if (!stored) return interaction.editReply({ content: '❌ Session expirée, recommence.' });
-  pendingModal.delete(interaction.user.id);
-
   const choices = [
-    { nom: stored.choix1_nom, apparence: stored.choix1_apparence },
-    { nom: stored.choix2_nom, apparence: stored.choix2_apparence },
-    { nom: interaction.fields.getTextInputValue('choix3_nom'), apparence: interaction.fields.getTextInputValue('choix3_apparence') },
+    parseChoix(interaction.fields.getTextInputValue('choix1')),
+    parseChoix(interaction.fields.getTextInputValue('choix2')),
+    parseChoix(interaction.fields.getTextInputValue('choix3')),
   ];
 
   const guild        = interaction.guild;
@@ -171,12 +128,12 @@ async function handleModal2(interaction) {
       new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
     );
 
+  const labels = ['1er', '2ème', '3ème'];
   for (let i = 0; i < 3; i++) {
     const c = choices[i];
-    const label = i === 0 ? '1er' : i === 1 ? '2ème' : '3ème';
     staffContainer.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `**${label} choix**\n> 🏛️ Dieu : **${c.nom}**\n> 🎭 Apparence : **${c.apparence}**`
+        `**${labels[i]} choix**\n> 🏛️ Dieu : **${c.nom}**\n> 🎭 Apparence : **${c.apparence}**`
       )
     );
     if (i < 2) staffContainer.addSeparatorComponents(
@@ -191,9 +148,9 @@ async function handleModal2(interaction) {
     );
 
   const staffRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('resa_valid:1').setLabel(`✅ "${choices[0].nom}"`).setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('resa_valid:2').setLabel(`✅ "${choices[1].nom}"`).setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('resa_valid:3').setLabel(`✅ "${choices[2].nom}"`).setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('resa_valid:1').setLabel(`✅ ${choices[0].nom}`).setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('resa_valid:2').setLabel(`✅ ${choices[1].nom}`).setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('resa_valid:3').setLabel(`✅ ${choices[2].nom}`).setStyle(ButtonStyle.Success),
   );
 
   const refusRow = new ActionRowBuilder().addComponents(
@@ -234,18 +191,14 @@ async function handleResaValidation(interaction) {
   pendingResa.delete(interaction.message.id);
   const choix = entry.choices[parseInt(choixIndex) - 1];
 
-  // Désactiver les boutons
   await interaction.message.edit({ components: [] }).catch(() => {});
 
-  // Stocker en attente d'image
   pendingImage.set(interaction.user.id, { choix, entry });
 
-  // Demander l'image au staff
-  const prompt = await interaction.editReply({
-    content: `✅ Choix **"${choix.nom}"** (${choix.apparence}) sélectionné.\n\nUploade maintenant l'image de l'apparence dans ce channel. *(2 minutes)*`,
+  await interaction.editReply({
+    content: `✅ Choix **${choix.nom}** (${choix.apparence}) sélectionné.\n\nUploade maintenant l'image de l'apparence dans ce channel. *(2 minutes)*`,
   });
 
-  // Timeout 2 minutes
   setTimeout(async () => {
     if (pendingImage.has(interaction.user.id)) {
       pendingImage.delete(interaction.user.id);
@@ -254,7 +207,7 @@ async function handleResaValidation(interaction) {
   }, 120_000);
 }
 
-// ── Réception de l'image staff ─────────────────────────────────────────────
+// ── Réception image staff ──────────────────────────────────────────────────
 async function handleStaffImage(message) {
   if (!pendingImage.has(message.author.id)) return;
   if (message.channelId !== CHANNEL_STAFF) return;
@@ -334,11 +287,9 @@ async function handleResaRefus(interaction) {
 
 module.exports = {
   sendResaPanel,
-  openResaModal1,
-  handleModal1,
-  handleModal2,
+  openResaModal,
+  handleResaSubmit,
   handleResaValidation,
   handleResaRefus,
   handleStaffImage,
-  pendingImage,
 };
