@@ -40,7 +40,6 @@ module.exports = {
         return interaction.showModal(modal);
       }
 
-      // Tickets
       if (action === 'ticket_open')  return require('../utils/tickets').openTicket(interaction, client);
       if (action === 'ticket_close') return require('../utils/tickets').closeTicket(interaction, client);
     }
@@ -55,19 +54,18 @@ module.exports = {
         const { captchaCodes } = require('./guildMemberAdd');
         const entry = captchaCodes.get(targetId);
 
-        // Vérifier que c'est bien le bon membre qui répond
         if (interaction.user.id !== targetId) {
           return interaction.editReply({ content: '❌ Ce captcha ne te concerne pas.' });
         }
 
         if (!entry) {
-          return interaction.editReply({ content: '❌ Captcha expiré ou introuvable. Un admin peut te vérifier manuellement.' });
+          return interaction.editReply({ content: '❌ Captcha expiré. Un admin peut te vérifier manuellement.' });
         }
 
         const userInput = interaction.fields.getTextInputValue('captcha_code').toUpperCase().trim();
         entry.attempts++;
 
-        // Bonne réponse
+        // ✅ Bonne réponse
         if (userInput === entry.code) {
           captchaCodes.delete(targetId);
 
@@ -85,11 +83,15 @@ module.exports = {
 
           await interaction.editReply({ content: '✅ Vérifié ! Bienvenue sur Vae Victis ⚔️' });
 
+          // Message de bienvenue dans le général
+          const { sendWelcomeGeneral } = require('../utils/welcome');
+          await sendWelcomeGeneral(member);
+
           // Log
           const logChannel = interaction.guild.channels.cache.get(channels.logs);
           if (logChannel) logChannel.send(`✅ **${member.user.tag}** s'est vérifié via captcha.`);
 
-        // Mauvaise réponse
+        // ❌ Mauvaise réponse
         } else if (entry.attempts >= 3) {
           captchaCodes.delete(targetId);
           await interaction.editReply({ content: '❌ 3 tentatives échouées. Contacte un modérateur.' });
