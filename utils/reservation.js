@@ -104,6 +104,7 @@ async function openResaModal1(interaction) {
 
 // ── Traitement Modal 1 → Modal 2 ──────────────────────────────────────────
 async function handleModal1(interaction) {
+  // Stocker les choix 1 & 2
   pendingModal.set(interaction.user.id, {
     choix1_nom:       interaction.fields.getTextInputValue('choix1_nom'),
     choix1_apparence: interaction.fields.getTextInputValue('choix1_apparence'),
@@ -111,6 +112,7 @@ async function handleModal1(interaction) {
     choix2_apparence: interaction.fields.getTextInputValue('choix2_apparence'),
   });
 
+  // Ouvrir la modal 2 DIRECTEMENT (pas de defer avant showModal)
   const modal = new ModalBuilder()
     .setCustomId('resa_modal2')
     .setTitle('⚔️ Réservation — Choix 3');
@@ -134,6 +136,7 @@ async function handleModal1(interaction) {
     ),
   );
 
+  // showModal répond à l'interaction — pas besoin de reply/defer
   await interaction.showModal(modal);
 }
 
