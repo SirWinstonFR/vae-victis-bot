@@ -5,6 +5,8 @@ const {
   handleResaRefus,
 } = require('../utils/reservation');
 
+const ROLE_REGLEMENT = '1513520319019749438';
+
 module.exports = {
   name: 'interactionCreate',
   async execute(interaction, client) {
@@ -25,6 +27,23 @@ module.exports = {
     // ── Boutons ────────────────────────────────────────────────────────
     if (interaction.isButton()) {
       const [action] = interaction.customId.split(':');
+
+      // Règlement
+      if (action === 'reglement_accept') {
+        await interaction.deferReply({ flags: 64 });
+        const member = interaction.member;
+        const role   = interaction.guild.roles.cache.get(ROLE_REGLEMENT);
+
+        if (!role) return interaction.editReply({ content: '❌ Rôle introuvable.' });
+
+        if (member.roles.cache.has(ROLE_REGLEMENT)) {
+          return interaction.editReply({ content: '✅ Tu as déjà accepté le règlement !' });
+        }
+
+        await member.roles.add(role);
+        return interaction.editReply({ content: '✅ Merci ! Tu as accepté le règlement de Vae Victis.' });
+      }
+
       if (action === 'ticket_open')  return require('../utils/tickets').openTicket(interaction, client);
       if (action === 'ticket_close') return require('../utils/tickets').closeTicket(interaction, client);
       if (action === 'resa_open')    return openResaModal(interaction);
