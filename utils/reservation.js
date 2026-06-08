@@ -13,15 +13,20 @@ const {
   MediaGalleryItemBuilder,
   MessageFlags,
 } = require('discord.js');
+const { loadResa, saveResa } = require('./store');
 
 const CHANNEL_RESA  = '1512195690523000832';
 const CHANNEL_STAFF = '1512195689176764508';
 
-// Map<staffMessageId, { userId, userTag, choices: [{nom, apparence}x3] }>
-const pendingResa = new Map();
+// Chargement depuis le disque au démarrage
+let pendingResa = loadResa();
 
-// Map<staffUserId, { choix, entry }> — en attente d'image après validation
+// En mémoire uniquement (courte durée, 2 min max)
 const pendingImage = new Map();
+
+function savePendingResa() {
+  saveResa(pendingResa);
+}
 
 // ── Panel #réservation ─────────────────────────────────────────────────────
 async function sendResaPanel(channel) {
@@ -92,16 +97,12 @@ async function openResaModal(interaction) {
   await interaction.showModal(modal);
 }
 
-// ── Parsing d'un champ "Nom | Apparence" ──────────────────────────────────
 function parseChoix(value) {
   const parts = value.split('|').map(s => s.trim());
-  return {
-    nom:       parts[0] || value.trim(),
-    apparence: parts[1] || '—',
-  };
+  return { nom: parts[0] || value.trim(), apparence: parts[1] || '—' };
 }
 
-// ── Traitement soumission modal ────────────────────────────────────────────
+// ── Soumission modal ───────────────────────────────────────────────────────
 async function handleResaSubmit(interaction) {
   await interaction.deferReply({ flags: 64 });
 
@@ -117,7 +118,6 @@ async function handleResaSubmit(interaction) {
 
   if (!staffChannel) return interaction.editReply({ content: '❌ Channel staff introuvable.' });
 
-  // Message staff
   const staffContainer = new ContainerBuilder()
     .addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
@@ -162,13 +162,14 @@ async function handleResaSubmit(interaction) {
     flags: MessageFlags.IsComponentsV2,
   });
 
-  pendingResa.set(staffMsg.id, {
+  // Sauvegarder sur disque
+  pendingResa[staffMsg.id] = {
     userId:  interaction.user.id,
     userTag: interaction.user.tag,
     choices,
-  });
+  };
+  savePendingResa();
 
-  // Confirmation dans #réservation
   if (resaChannel) {
     const confirm = await resaChannel.send(
       `${interaction.user} Ta réservation a bien été envoyée au staff ! ✅\n*Tu seras notifié ici dès qu'elle sera traitée.*`
@@ -179,18 +180,19 @@ async function handleResaSubmit(interaction) {
   await interaction.editReply({ content: '✅ Réservation envoyée !' });
 }
 
-// ── Validation staff → demande image ──────────────────────────────────────
+// ── Validation staff ───────────────────────────────────────────────────────
 async function handleResaValidation(interaction) {
   await interaction.deferReply({ flags: 64 });
 
   const [, choixIndex] = interaction.customId.split(':');
-  const entry = pendingResa.get(interaction.message.id);
+  const entry = pendingResa[interaction.message.id];
 
   if (!entry) return interaction.editReply({ content: '❌ Réservation introuvable ou déjà traitée.' });
 
-  pendingResa.delete(interaction.message.id);
-  const choix = entry.choices[parseInt(choixIndex) - 1];
+  delete pendingResa[interaction.message.id];
+  savePendingResa();
 
+  const choix = entry.choices[parseInt(choixIndex) - 1];
   await interaction.message.edit({ components: [] }).catch(() => {});
 
   pendingImage.set(interaction.user.id, { choix, entry });
@@ -207,7 +209,7 @@ async function handleResaValidation(interaction) {
   }, 120_000);
 }
 
-// ── Réception image staff ──────────────────────────────────────────────────
+// ── Image staff ────────────────────────────────────────────────────────────
 async function handleStaffImage(message) {
   if (!pendingImage.has(message.author.id)) return;
   if (message.channelId !== CHANNEL_STAFF) return;
@@ -257,10 +259,11 @@ async function handleStaffImage(message) {
 async function handleResaRefus(interaction) {
   await interaction.deferUpdate();
 
-  const entry = pendingResa.get(interaction.message.id);
+  const entry = pendingResa[interaction.message.id];
   if (!entry) return interaction.followUp({ content: '❌ Réservation introuvable.', flags: 64 });
 
-  pendingResa.delete(interaction.message.id);
+  delete pendingResa[interaction.message.id];
+  savePendingResa();
 
   const guild      = interaction.guild;
   const resaChannel = guild.channels.cache.get(CHANNEL_RESA);

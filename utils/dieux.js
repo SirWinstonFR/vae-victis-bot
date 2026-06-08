@@ -1,5 +1,4 @@
-// Base de données des dieux par faction
-// Structure : { nom, joueur: null | userId, joue: false }
+const { loadDieux, saveDieux } = require('./store');
 
 const FACTIONS = {
   Sovereign: [
@@ -23,31 +22,31 @@ const COULEURS_FACTION = {
   Shemning:  '🔴',
 };
 
-// Stockage en mémoire : Map<nomDieu, { joueurId, joueurTag }>
-const dieuData = new Map();
+// Chargement depuis le disque au démarrage
+let dieuData = loadDieux();
 
-// ID du message du panel (pour le mettre à jour)
 let panelMessageId = null;
-let panelChannelId = '1512195690523000834';
+const panelChannelId = '1512195690523000834';
 
 function setPanelMessageId(id) { panelMessageId = id; }
 function getPanelMessageId()    { return panelMessageId; }
 function getPanelChannelId()    { return panelChannelId; }
 
 function setDieu(nomDieu, joueurId, joueurTag) {
-  dieuData.set(nomDieu.toLowerCase(), { joueurId, joueurTag });
+  dieuData[nomDieu.toLowerCase()] = { joueurId, joueurTag };
+  saveDieux(dieuData);
 }
 
 function removeDieu(nomDieu) {
-  dieuData.delete(nomDieu.toLowerCase());
+  delete dieuData[nomDieu.toLowerCase()];
+  saveDieux(dieuData);
 }
 
 function getDieu(nomDieu) {
-  return dieuData.get(nomDieu.toLowerCase()) || null;
+  return dieuData[nomDieu.toLowerCase()] || null;
 }
 
 function findDieu(nomDieu) {
-  // Cherche le dieu dans toutes les factions (insensible à la casse)
   const lower = nomDieu.toLowerCase();
   for (const [faction, dieux] of Object.entries(FACTIONS)) {
     const found = dieux.find(d => d.toLowerCase() === lower);
@@ -58,7 +57,6 @@ function findDieu(nomDieu) {
 
 function buildPanelContent(guild) {
   const lines = [];
-
   for (const [faction, dieux] of Object.entries(FACTIONS)) {
     lines.push(`## ${COULEURS_FACTION[faction]} ${faction}\n`);
     for (const dieu of dieux) {
@@ -73,7 +71,6 @@ function buildPanelContent(guild) {
     }
     lines.push('');
   }
-
   return lines.join('\n');
 }
 
