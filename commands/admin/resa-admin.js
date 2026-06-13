@@ -1,9 +1,6 @@
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  ModalBuilder,
-  TextInputBuilder,
-  TextInputStyle,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -11,49 +8,35 @@ const {
   TextDisplayBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
-  MediaGalleryBuilder,
-  MediaGalleryItemBuilder,
   MessageFlags,
 } = require('discord.js');
-const { handleStaffImage } = require('../../utils/reservation');
+const { loadResa, saveResa } = require('../../utils/store');
 
 const CHANNEL_STAFF = '1512195689176764508';
-const CHANNEL_RESA  = '1512195690523000832';
-
-// Stockage temporaire en mémoire (courte durée, usage admin uniquement)
-const pendingAdminResa = new Map();
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('resa-admin')
     .setDescription('Créer manuellement une réservation validée pour un joueur')
     .addUserOption(o =>
-      o.setName('joueur')
-        .setDescription('Le membre concerné par la réservation')
-        .setRequired(true)
+      o.setName('joueur').setDescription('Le membre concerné').setRequired(true)
     )
     .addStringOption(o =>
-      o.setName('choix1')
-        .setDescription('1er choix — Dieu | Apparence')
-        .setRequired(true)
+      o.setName('choix1').setDescription('1er choix — Dieu | Apparence').setRequired(true)
     )
     .addStringOption(o =>
-      o.setName('choix2')
-        .setDescription('2ème choix — Dieu | Apparence')
-        .setRequired(true)
+      o.setName('choix2').setDescription('2ème choix — Dieu | Apparence').setRequired(true)
     )
     .addStringOption(o =>
-      o.setName('choix3')
-        .setDescription('3ème choix — Dieu | Apparence')
-        .setRequired(true)
+      o.setName('choix3').setDescription('3ème choix — Dieu | Apparence').setRequired(true)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
     await interaction.deferReply({ flags: 64 });
 
-    const membre  = interaction.options.getMember('joueur');
-    const parse   = (val) => {
+    const membre = interaction.options.getMember('joueur');
+    const parse  = (val) => {
       const parts = val.split('|').map(s => s.trim());
       return { nom: parts[0] || val.trim(), apparence: parts[1] || '—' };
     };
@@ -68,7 +51,6 @@ module.exports = {
     const staffChannel = guild.channels.cache.get(CHANNEL_STAFF);
     if (!staffChannel) return interaction.editReply({ content: '❌ Channel staff introuvable.' });
 
-    // Message staff avec les 3 choix
     const staffContainer = new ContainerBuilder()
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
@@ -115,10 +97,8 @@ module.exports = {
       flags: MessageFlags.IsComponentsV2,
     });
 
-    // Stocker en mémoire (même format que pendingResa)
-    const { pendingResa } = require('../../utils/reservation');
-    const { saveResa }    = require('../../utils/store');
-
+    // Sauvegarder directement dans le fichier JSON
+    const pendingResa = loadResa();
     pendingResa[staffMsg.id] = {
       userId:  membre.id,
       userTag: membre.user.tag,

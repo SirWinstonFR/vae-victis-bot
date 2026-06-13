@@ -19,14 +19,11 @@ const CHANNEL_RESA  = '1512195690523000832';
 const CHANNEL_STAFF = '1512195689176764508';
 
 // Chargement depuis le disque au démarrage
-let pendingResa = loadResa();
+// pendingResa chargé à chaque opération depuis le disque
 
 // En mémoire uniquement (courte durée, 2 min max)
 const pendingImage = new Map();
 
-function savePendingResa() {
-  saveResa(pendingResa);
-}
 
 // ── Panel #réservation ─────────────────────────────────────────────────────
 async function sendResaPanel(channel) {
@@ -163,12 +160,13 @@ async function handleResaSubmit(interaction) {
   });
 
   // Sauvegarder sur disque
+  const pendingResa = loadResa();
   pendingResa[staffMsg.id] = {
     userId:  interaction.user.id,
     userTag: interaction.user.tag,
     choices,
   };
-  savePendingResa();
+  saveResa(pendingResa);
 
   if (resaChannel) {
     const confirm = await resaChannel.send(
@@ -185,12 +183,13 @@ async function handleResaValidation(interaction) {
   await interaction.deferReply({ flags: 64 });
 
   const [, choixIndex] = interaction.customId.split(':');
+  const pendingResa = loadResa();
   const entry = pendingResa[interaction.message.id];
 
   if (!entry) return interaction.editReply({ content: '❌ Réservation introuvable ou déjà traitée.' });
 
   delete pendingResa[interaction.message.id];
-  savePendingResa();
+  saveResa(pendingResa);
 
   const choix = entry.choices[parseInt(choixIndex) - 1];
   await interaction.message.edit({ components: [] }).catch(() => {});
@@ -259,11 +258,12 @@ async function handleStaffImage(message) {
 async function handleResaRefus(interaction) {
   await interaction.deferUpdate();
 
+  const pendingResa = loadResa();
   const entry = pendingResa[interaction.message.id];
   if (!entry) return interaction.followUp({ content: '❌ Réservation introuvable.', flags: 64 });
 
   delete pendingResa[interaction.message.id];
-  savePendingResa();
+  saveResa(pendingResa);
 
   const guild      = interaction.guild;
   const resaChannel = guild.channels.cache.get(CHANNEL_RESA);
