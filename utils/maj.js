@@ -12,7 +12,7 @@ const {
   MessageFlags,
 } = require('discord.js');
 
-const CHANNEL_MAJ = '1514294989016793108'; // même channel que le panel de rôles
+const CHANNEL_MAJ = '1515740335853142016'; // channel d'annonces MAJ
 const ROLE_MAJ    = '1514294464200572949'; // rôle "Mise à jour (Site)"
 
 // Map<staffUserId, { titre, description, changements }>
