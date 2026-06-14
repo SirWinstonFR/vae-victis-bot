@@ -210,11 +210,11 @@ async function handleResaValidation(interaction) {
 
 // ── Image staff ────────────────────────────────────────────────────────────
 async function handleStaffImage(message) {
-  if (!pendingImage.has(message.author.id)) return;
-  if (message.channelId !== CHANNEL_STAFF) return;
+  if (!pendingImage.has(message.author.id)) return false;
+  if (message.channelId !== CHANNEL_STAFF) return false;
 
   const attachment = message.attachments.first();
-  if (!attachment) return;
+  if (!attachment) return false;
 
   const { choix, entry } = pendingImage.get(message.author.id);
   pendingImage.delete(message.author.id);
@@ -252,6 +252,7 @@ async function handleStaffImage(message) {
   }
 
   await message.react('✅').catch(() => {});
+  return true;
 }
 
 // ── Refus staff ────────────────────────────────────────────────────────────

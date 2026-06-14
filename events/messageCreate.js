@@ -1,6 +1,7 @@
 const { roles, channels } = require('../config/config');
 const { sendWelcomeGeneral } = require('../utils/welcome');
 const { handleStaffImage } = require('../utils/reservation');
+const { handleMajMessage } = require('../utils/maj');
 
 const CHANNEL_STAFF = '1512195689176764508';
 
@@ -63,9 +64,15 @@ module.exports = {
       return;
     }
 
-    // ── Image staff pour validation réservation ────────────────────────
+    // ── Réservation : image staff pour validation ──────────────────────
     if (message.channelId === CHANNEL_STAFF && message.attachments.size > 0) {
-      await handleStaffImage(message);
+      const handled = await handleStaffImage(message);
+      if (handled) return;
+    }
+
+    // ── MAJ : images ou skip ────────────────────────────────────────────
+    if (message.channelId === CHANNEL_STAFF) {
+      await handleMajMessage(message);
     }
   },
 };

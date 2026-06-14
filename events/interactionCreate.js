@@ -4,6 +4,7 @@ const {
   handleResaValidation,
   handleResaRefus,
 } = require('../utils/reservation');
+const { handleMajSubmit } = require('../utils/maj');
 
 const ROLE_REGLEMENT = '1513520319019749438';
 
@@ -28,7 +29,6 @@ module.exports = {
     if (interaction.isButton()) {
       const [action, param] = interaction.customId.split(':');
 
-      // Règlement
       if (action === 'reglement_accept') {
         await interaction.deferReply({ flags: 64 });
         const role = interaction.guild.roles.cache.get(ROLE_REGLEMENT);
@@ -40,7 +40,6 @@ module.exports = {
         return interaction.editReply({ content: '✅ Merci ! Tu as accepté le règlement de Vae Victis.' });
       }
 
-      // Toggle rôle notification
       if (action === 'role_toggle') {
         await interaction.deferReply({ flags: 64 });
         const role = interaction.guild.roles.cache.get(param);
@@ -48,10 +47,10 @@ module.exports = {
 
         if (interaction.member.roles.cache.has(param)) {
           await interaction.member.roles.remove(role);
-          return interaction.editReply({ content: `🔕 Rôle **${role.name}** retiré — tu ne recevras plus ces notifications.` });
+          return interaction.editReply({ content: `🔕 Rôle **${role.name}** retiré.` });
         } else {
           await interaction.member.roles.add(role);
-          return interaction.editReply({ content: `🔔 Rôle **${role.name}** obtenu — tu recevras désormais ces notifications.` });
+          return interaction.editReply({ content: `🔔 Rôle **${role.name}** obtenu.` });
         }
       }
 
@@ -65,6 +64,7 @@ module.exports = {
     // ── Modals ─────────────────────────────────────────────────────────
     if (interaction.isModalSubmit()) {
       if (interaction.customId === 'resa_submit') return handleResaSubmit(interaction);
+      if (interaction.customId === 'maj_submit')  return handleMajSubmit(interaction);
     }
   },
 };
