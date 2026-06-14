@@ -55,7 +55,7 @@ function findDieu(nomDieu) {
   return null;
 }
 
-function buildPanelContent(guild) {
+function buildPanelContent(guild, withMentions = false) {
   const lines = [];
   for (const [faction, dieux] of Object.entries(FACTIONS)) {
     lines.push(`## ${COULEURS_FACTION[faction]} ${faction}\n`);
@@ -63,7 +63,13 @@ function buildPanelContent(guild) {
       const data = getDieu(dieu);
       if (data) {
         const member = guild?.members.cache.get(data.joueurId);
-        const tag = member ? member.toString() : data.joueurTag;
+        let tag;
+        if (withMentions && data.joueurId) {
+          tag = `<@${data.joueurId}>`;
+        } else {
+          tag = member ? (member.displayName || member.user.username) : data.joueurTag;
+          tag = `**${tag}**`;
+        }
         lines.push(`> ⚔️ **${dieu}** — joué par ${tag}`);
       } else {
         lines.push(`> ✨ **${dieu}** — *disponible*`);

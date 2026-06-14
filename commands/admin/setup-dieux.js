@@ -2,8 +2,6 @@ const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('disc
 const {
   ContainerBuilder,
   TextDisplayBuilder,
-  SeparatorBuilder,
-  SeparatorSpacingSize,
 } = require('discord.js');
 const { buildPanelContent, setPanelMessageId, getPanelChannelId } = require('../../utils/dieux');
 
@@ -19,23 +17,43 @@ module.exports = {
     const channel = interaction.guild.channels.cache.get(getPanelChannelId());
     if (!channel) return interaction.editReply({ content: '❌ Channel introuvable.' });
 
-    const content = buildPanelContent(interaction.guild);
+    // 1. Envoi initial SANS mentions (pas de ping de masse)
+    const contentSansMention = buildPanelContent(interaction.guild, false);
 
-    const container = new ContainerBuilder()
+    const containerSansMention = new ContainerBuilder()
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
           `# ⚔️ Panthéons de Vae Victis\n` +
           `*Liste des divinités disponibles et de leurs joueurs.*\n\n` +
-          content
+          contentSansMention
         )
       );
 
     const msg = await channel.send({
-      components: [container],
+      components: [containerSansMention],
       flags: MessageFlags.IsComponentsV2,
     });
 
     setPanelMessageId(msg.id);
+
+    // 2. Édition après quelques secondes AVEC mentions (edit ne ping pas)
+    setTimeout(async () => {
+      const contentAvecMention = buildPanelContent(interaction.guild, true);
+      const containerAvecMention = new ContainerBuilder()
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            `# ⚔️ Panthéons de Vae Victis\n` +
+            `*Liste des divinités disponibles et de leurs joueurs.*\n\n` +
+            contentAvecMention
+          )
+        );
+
+      await msg.edit({
+        components: [containerAvecMention],
+        flags: MessageFlags.IsComponentsV2,
+      }).catch(() => {});
+    }, 3000);
+
     await interaction.editReply({ content: `✅ Panel des dieux envoyé dans ${channel}` });
   },
 };

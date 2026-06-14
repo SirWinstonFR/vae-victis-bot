@@ -64,7 +64,7 @@ module.exports = {
     if (panelMsgId && channel) {
       const panelMsg = await channel.messages.fetch(panelMsgId).catch(() => null);
       if (panelMsg) {
-        const content = buildPanelContent(interaction.guild);
+        const content = buildPanelContent(interaction.guild, true);
         const container = new ContainerBuilder()
           .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
