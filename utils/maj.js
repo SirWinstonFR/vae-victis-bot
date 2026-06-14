@@ -63,7 +63,6 @@ async function handleMajSubmit(interaction) {
   const changements  = interaction.fields.getTextInputValue('maj_changements');
 
   pendingMaj.set(interaction.user.id, { titre, description, changements, images: [] });
-  console.log('[MAJ] Enregistré pour', interaction.user.id, '— pendingMaj size:', pendingMaj.size);
 
   await interaction.editReply({
     content:
@@ -83,7 +82,6 @@ async function handleMajSubmit(interaction) {
 
 // ── Réception des images ou "skip" ─────────────────────────────────────────
 async function handleMajMessage(message) {
-  console.log('[MAJ] handleMajMessage appelé pour', message.author.id, '— pendingMaj size:', pendingMaj.size, '— has:', pendingMaj.has(message.author.id));
   if (!pendingMaj.has(message.author.id)) return false;
 
   const entry = pendingMaj.get(message.author.id);
@@ -127,6 +125,9 @@ async function publishMaj(message, entry) {
 
   const container = new ContainerBuilder()
     .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`<@&${ROLE_MAJ}>`)
+    )
+    .addTextDisplayComponents(
       new TextDisplayBuilder().setContent(`# 📢 ${entry.titre}`)
     )
     .addSeparatorComponents(
@@ -160,9 +161,9 @@ async function publishMaj(message, entry) {
     );
 
   await channel.send({
-    content: `<@&${ROLE_MAJ}>`,
     components: [container],
     flags: MessageFlags.IsComponentsV2,
+    allowedMentions: { roles: [ROLE_MAJ] },
   });
 }
 
