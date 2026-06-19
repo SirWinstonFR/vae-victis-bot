@@ -172,3 +172,64 @@ module.exports = {
   handleMajSubmit,
   handleMajMessage,
 };
+
+
+// ============================================================
+// BIENVENUE DIEU — handler image depuis messageCreate
+// ============================================================
+async function handleBienvenueImage(message) {
+  const { pendingBienvenue, CHANNEL_GENERAL, CHANNEL_DEMANDE } = require('../commands/admin/bienvenue-dieu');
+
+  if (!pendingBienvenue.has(message.author.id)) return false;
+  if (message.attachments.size === 0) return false;
+
+  const attachment = message.attachments.first();
+  const entry      = pendingBienvenue.get(message.author.id);
+  pendingBienvenue.delete(message.author.id);
+
+  const {
+    ContainerBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
+    MessageFlags,
+  } = require('discord.js');
+
+  const guild   = message.guild;
+  const channel = guild.channels.cache.get(CHANNEL_GENERAL);
+  if (!channel) return false;
+
+  const joueur = await guild.members.fetch(entry.joueurId).catch(() => null);
+
+  const container = new ContainerBuilder()
+    .addMediaGalleryComponents(
+      new MediaGalleryBuilder().addItems(
+        new MediaGalleryItemBuilder().setURL(attachment.url)
+      )
+    )
+    .addSeparatorComponents(
+      new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `## ⚔️ Nouvelle divinité validée !\n\n` +
+        `${joueur ?? entry.joueurId} a été validé(e). Il/Elle incarnera **${entry.dieu}** et ses informations sont retrouvables sur le site de **Vae Victis**.\n\n` +
+        `Nous comptons sur vous pour lui trouver quelques liens via le salon <#${CHANNEL_DEMANDE}>, et d'attendre l'ouverture ce **${entry.date}** pour débuter l'aventure Vae Victis.\n\n` +
+        `Nous comptons sur votre engagement pour rester proche du serveur et vous manifester de temps en temps ❤️\n\n` +
+        `*Le staff de Vae Victis*`
+      )
+    );
+
+  await channel.send({
+    components: [container],
+    flags: MessageFlags.IsComponentsV2,
+    allowedMentions: { users: [entry.joueurId] },
+  });
+
+  await message.react('✅').catch(() => {});
+  return true;
+}
+
+module.exports.handleBienvenueImage = handleBienvenueImage;

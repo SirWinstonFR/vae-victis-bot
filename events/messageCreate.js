@@ -1,7 +1,7 @@
 const { roles, channels } = require('../config/config');
 const { sendWelcomeGeneral } = require('../utils/welcome');
 const { handleStaffImage } = require('../utils/reservation');
-const { handleMajMessage } = require('../utils/maj');
+const { handleMajMessage, handleBienvenueImage } = require('../utils/maj');
 
 const CHANNEL_STAFF = '1512195689176764508';
 
@@ -17,7 +17,6 @@ module.exports = {
       const entry = captchaCodes.get(message.author.id);
 
       await message.delete().catch(() => {});
-
       if (!entry) return;
 
       const userInput = message.content.toUpperCase().trim();
@@ -64,14 +63,20 @@ module.exports = {
       return;
     }
 
-    // ── Réservation : image staff pour validation ──────────────────────
-    if (message.channelId === CHANNEL_STAFF && message.attachments.size > 0) {
-      const handled = await handleStaffImage(message);
-      if (handled) return;
-    }
-
-    // ── MAJ : images ou skip ────────────────────────────────────────────
+    // ── Channel staff uniquement ───────────────────────────────────────
     if (message.channelId === CHANNEL_STAFF) {
+
+      // Réservation : image de validation
+      if (message.attachments.size > 0) {
+        if (await handleStaffImage(message)) return;
+      }
+
+      // Bienvenue dieu : bannière
+      if (message.attachments.size > 0) {
+        if (await handleBienvenueImage(message)) return;
+      }
+
+      // MAJ : images ou skip
       await handleMajMessage(message);
     }
   },
