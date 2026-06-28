@@ -212,6 +212,5 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
 
 module.exports = {
   handleConflitModal1,
-  handleConflitModal2,
   handleConflitMessage,
 };
