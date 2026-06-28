@@ -114,7 +114,10 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
 
   const { attaquant, defenseur, lieu, description, idees, pnjNom, pnjBio } = entry;
 
-  const title = `⚔️ ${attaquant.displayName || attaquant.user.username} vs ${defenseur.displayName || defenseur.user.username} — ${lieu}`;
+  const title = `⚔️ ${attaquant.user.username} vs ${defenseur.user.username} — ${lieu}`;
+
+  // Dédupliquer les IDs (cas où attaquant = défenseur en test)
+  const mentionUsers = [...new Set([attaquant.id, defenseur.id])];
 
   // ── Container principal ────────────────────────────────────────────
   const main = new ContainerBuilder();
@@ -204,7 +207,7 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
       components,
       flags: MessageFlags.IsComponentsV2,
       allowedMentions: {
-        users: [attaquant.id, defenseur.id],
+        users: mentionUsers,
       },
     },
   });
