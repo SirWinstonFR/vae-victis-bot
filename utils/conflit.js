@@ -32,6 +32,8 @@ async function handleConflitModal1(interaction) {
   pendingConflit.set(interaction.user.id, {
     attaquant: pre.attaquant,
     defenseur: pre.defenseur,
+    nomAttaquant: pre.nomAttaquant,
+    nomDefenseur: pre.nomDefenseur,
     lieu,
     description,
     idees,
@@ -112,9 +114,9 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
   const forum   = guild.channels.cache.get(CHANNEL_FORUM);
   if (!forum) return;
 
-  const { attaquant, defenseur, lieu, description, idees, pnjNom, pnjBio } = entry;
+  const { attaquant, defenseur, nomAttaquant, nomDefenseur, lieu, description, idees, pnjNom, pnjBio } = entry;
 
-  const title = `⚔️ ${attaquant.user.username} vs ${defenseur.user.username} — ${lieu}`;
+  const title = `${nomAttaquant} vs ${nomDefenseur} — ${lieu}`;
 
   // Dédupliquer les IDs (cas où attaquant = défenseur en test)
   const mentionUsers = [...new Set([attaquant.id, defenseur.id])];
@@ -134,13 +136,11 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
     );
   }
 
-  // Header du conflit — ligne VS + détails
+  // Header du conflit — ligne VS uniquement
   main.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `## ⚔️ Conflit — ${lieu}\n\n` +
-      `${attaquant} ⚔️ **VS** ⚔️ ${defenseur}\n\n` +
-      `> **Attaquant :** ${attaquant}\n` +
-      `> **Défenseur :** ${defenseur}`
+      `## Conflit — ${lieu}\n\n` +
+      `${attaquant} (${nomAttaquant}) **VS** ${defenseur} (${nomDefenseur})`
     )
   );
 

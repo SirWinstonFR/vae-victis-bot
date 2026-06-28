@@ -31,14 +31,22 @@ module.exports = {
     .addUserOption(o =>
       o.setName('defenseur').setDescription('Divinité défenseure').setRequired(true)
     )
+    .addStringOption(o =>
+      o.setName('nom_attaquant').setDescription('Nom affiché pour l\'attaquant (ex: Athéna)').setRequired(true)
+    )
+    .addStringOption(o =>
+      o.setName('nom_defenseur').setDescription('Nom affiché pour le défenseur (ex: Judgment)').setRequired(true)
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
 
   async execute(interaction) {
-    const attaquant = interaction.options.getMember('attaquant');
-    const defenseur = interaction.options.getMember('defenseur');
+    const attaquant    = interaction.options.getMember('attaquant');
+    const defenseur    = interaction.options.getMember('defenseur');
+    const nomAttaquant = interaction.options.getString('nom_attaquant');
+    const nomDefenseur = interaction.options.getString('nom_defenseur');
 
     // Stocker les membres avant la modal
-    pendingConflit.set(`pre_${interaction.user.id}`, { attaquant, defenseur });
+    pendingConflit.set(`pre_${interaction.user.id}`, { attaquant, defenseur, nomAttaquant, nomDefenseur });
 
     // Ouvrir modal unique
     const modal = new ModalBuilder()
