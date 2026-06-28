@@ -134,12 +134,13 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
     );
   }
 
-  // Header du conflit
+  // Header du conflit — ligne VS + détails
   main.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
       `## ⚔️ Conflit — ${lieu}\n\n` +
-      `**Attaquant :** ${attaquant}\n` +
-      `**Défenseur :** ${defenseur}\n`
+      `${attaquant} ⚔️ **VS** ⚔️ ${defenseur}\n\n` +
+      `> **Attaquant :** ${attaquant}\n` +
+      `> **Défenseur :** ${defenseur}`
     )
   );
 
@@ -150,7 +151,8 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
   // Description
   main.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `### 📜 Situation\n${description}`
+      `### 📜 Situation\n` +
+      description.split('\n').map(l => `> ${l}`).join('\n')
     )
   );
 
@@ -161,7 +163,8 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
     );
     main.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `### 💡 Pistes & raisons possibles\n${idees}`
+        `### 💡 Pistes & raisons possibles\n` +
+        idees.split('\n').map(l => `> ${l}`).join('\n')
       )
     );
   }
@@ -178,21 +181,20 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
         new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
       );
 
-    if (pnjImage) {
-      pnjContainer.addMediaGalleryComponents(
-        new MediaGalleryBuilder().addItems(
-          new MediaGalleryItemBuilder().setURL(pnjImage).setDescription(pnjNom)
-        )
-      );
-      pnjContainer.addSeparatorComponents(
-        new SeparatorBuilder().setDivider(false).setSpacing(SeparatorSpacingSize.Small)
-      );
-    }
+    if (pnjBio || pnjImage) {
+      const section = new SectionBuilder();
 
-    if (pnjBio) {
-      pnjContainer.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(pnjBio)
+      section.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(pnjBio || '*Aucune description.*')
       );
+
+      if (pnjImage) {
+        section.setThumbnailAccessory(
+          new ThumbnailBuilder().setURL(pnjImage).setDescription(pnjNom)
+        );
+      }
+
+      pnjContainer.addSectionComponents(section);
     }
   }
 
@@ -201,7 +203,7 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
     ? [main, pnjContainer]
     : [main];
 
-  await forum.threads.create({
+  const thread = await forum.threads.create({
     name: title,
     message: {
       components,
@@ -211,6 +213,14 @@ async function publishConflit(message, entry, coverImage, pnjImage) {
       },
     },
   });
+
+  // Épingler le premier message automatiquement
+  try {
+    const starterMessage = await thread.fetchStarterMessage();
+    if (starterMessage) await starterMessage.pin();
+  } catch (e) {
+    console.warn('[CONFLIT] Épinglage échoué :', e.message);
+  }
 }
 
 module.exports = {
