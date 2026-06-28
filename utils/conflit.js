@@ -14,79 +14,42 @@ const {
   MessageFlags,
 } = require('discord.js');
 
-// ── Modal 1 → stocker et ouvrir Modal 2 ───────────────────────────────────
+// ── Modal unique → stocker et demander images ──────────────────────────────
 async function handleConflitModal1(interaction) {
+  await interaction.deferReply({ flags: 64 });
+
   const { pendingConflit } = require('../commands/admin/conflit');
 
   const pre = pendingConflit.get(`pre_${interaction.user.id}`);
-  if (!pre) return interaction.reply({ content: '❌ Session expirée, relance `/conflit`.', flags: 64 });
+  if (!pre) return interaction.editReply({ content: '❌ Session expirée, relance `/conflit`.' });
 
   const lieu        = interaction.fields.getTextInputValue('lieu');
   const description = interaction.fields.getTextInputValue('description');
-  const idees       = interaction.fields.getTextInputValue('idees') || null;
+  const idees       = interaction.fields.getTextInputValue('idees')?.trim() || null;
+  const pnjNom      = interaction.fields.getTextInputValue('pnj_nom')?.trim() || null;
+  const pnjBio      = interaction.fields.getTextInputValue('pnj_bio')?.trim() || null;
 
   pendingConflit.set(interaction.user.id, {
-    attaquant:  pre.attaquant,
-    defenseur:  pre.defenseur,
+    attaquant: pre.attaquant,
+    defenseur: pre.defenseur,
     lieu,
     description,
     idees,
-    pnjNom:  null,
-    pnjBio:  null,
-    images:  [],
+    pnjNom,
+    pnjBio,
+    images: [],
   });
   pendingConflit.delete(`pre_${interaction.user.id}`);
-
-  // Modal 2 — PNJ (optionnel)
-  const modal = new ModalBuilder()
-    .setCustomId('conflit_modal2')
-    .setTitle('⚔️ Conflit — PNJ (optionnel)');
-
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder()
-        .setCustomId('pnj_nom')
-        .setLabel('Nom du PNJ (laisser vide si aucun)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Ex: Le Général Moreau')
-        .setRequired(false)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder()
-        .setCustomId('pnj_bio')
-        .setLabel('Présentation courte du PNJ')
-        .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('Qui est-il ? Quel rôle joue-t-il dans ce conflit ?')
-        .setRequired(false)
-    ),
-  );
-
-  await interaction.showModal(modal);
-}
-
-// ── Modal 2 → demande images ───────────────────────────────────────────────
-async function handleConflitModal2(interaction) {
-  await interaction.deferReply({ flags: 64 });
-
-  const { pendingConflit, CHANNEL_STAFF } = require('../commands/admin/conflit');
-  const entry = pendingConflit.get(interaction.user.id);
-  if (!entry) return interaction.editReply({ content: '❌ Session expirée, relance `/conflit`.' });
-
-  const pnjNom = interaction.fields.getTextInputValue('pnj_nom')?.trim() || null;
-  const pnjBio = interaction.fields.getTextInputValue('pnj_bio')?.trim() || null;
-
-  entry.pnjNom = pnjNom;
-  entry.pnjBio = pnjBio;
 
   const hasPnj = !!pnjNom;
 
   await interaction.editReply({
     content:
       `✅ Infos enregistrées !\n\n` +
-      `Uploade maintenant dans ce channel :\n` +
-      `**1.** L'image de couverture du post (obligatoire)\n` +
-      (hasPnj ? `**2.** L'image du PNJ **${pnjNom}** (obligatoire car PNJ renseigné)\n` : '') +
-      `\nOu tape \`skip\` pour publier sans image de couverture.\n*(Délai : 3 minutes)*`,
+      `Uploade maintenant dans le channel staff :\n` +
+      `**1.** L'image de couverture du post\n` +
+      (hasPnj ? `**2.** L'image du PNJ **${pnjNom}**\n` : '') +
+      `\nOu tape \`skip\` pour publier sans image.\n*(Délai : 3 minutes)*`,
   });
 
   setTimeout(async () => {

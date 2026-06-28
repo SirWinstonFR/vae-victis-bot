@@ -40,10 +40,10 @@ module.exports = {
     // Stocker les membres avant la modal
     pendingConflit.set(`pre_${interaction.user.id}`, { attaquant, defenseur });
 
-    // Ouvrir modal 1
+    // Ouvrir modal unique
     const modal = new ModalBuilder()
       .setCustomId('conflit_modal1')
-      .setTitle('⚔️ Conflit — Infos générales');
+      .setTitle('⚔️ Nouveau conflit');
 
     modal.addComponents(
       new ActionRowBuilder().addComponents(
@@ -68,6 +68,22 @@ module.exports = {
           .setLabel('Idées / raisons possibles (optionnel)')
           .setStyle(TextInputStyle.Paragraph)
           .setPlaceholder('Ex: Conflit de ressources, trahison...')
+          .setRequired(false)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId('pnj_nom')
+          .setLabel('Nom du PNJ (laisser vide si aucun)')
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('Ex: Le Général Moreau')
+          .setRequired(false)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId('pnj_bio')
+          .setLabel('Présentation courte du PNJ (optionnel)')
+          .setStyle(TextInputStyle.Paragraph)
+          .setPlaceholder('Qui est-il ? Quel rôle joue-t-il ?')
           .setRequired(false)
       ),
     );

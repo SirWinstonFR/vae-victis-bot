@@ -7,7 +7,6 @@ const {
 const { handleMajSubmit } = require('../utils/maj');
 const {
   handleConflitModal1,
-  handleConflitModal2,
 } = require('../utils/conflit');
 
 const ROLE_REGLEMENT = '1513520319019749438';
@@ -69,7 +68,6 @@ module.exports = {
       if (interaction.customId === 'resa_submit')     return handleResaSubmit(interaction);
       if (interaction.customId === 'maj_submit')      return handleMajSubmit(interaction);
       if (interaction.customId === 'conflit_modal1')  return handleConflitModal1(interaction);
-      if (interaction.customId === 'conflit_modal2')  return handleConflitModal2(interaction);
     }
   },
 };
