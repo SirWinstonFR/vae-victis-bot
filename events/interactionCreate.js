@@ -5,6 +5,10 @@ const {
   handleResaRefus,
 } = require('../utils/reservation');
 const { handleMajSubmit } = require('../utils/maj');
+const {
+  handleConflitModal1,
+  handleConflitModal2,
+} = require('../utils/conflit');
 
 const ROLE_REGLEMENT = '1513520319019749438';
 
@@ -44,7 +48,6 @@ module.exports = {
         await interaction.deferReply({ flags: 64 });
         const role = interaction.guild.roles.cache.get(param);
         if (!role) return interaction.editReply({ content: '❌ Rôle introuvable.' });
-
         if (interaction.member.roles.cache.has(param)) {
           await interaction.member.roles.remove(role);
           return interaction.editReply({ content: `🔕 Rôle **${role.name}** retiré.` });
@@ -63,8 +66,10 @@ module.exports = {
 
     // ── Modals ─────────────────────────────────────────────────────────
     if (interaction.isModalSubmit()) {
-      if (interaction.customId === 'resa_submit') return handleResaSubmit(interaction);
-      if (interaction.customId === 'maj_submit')  return handleMajSubmit(interaction);
+      if (interaction.customId === 'resa_submit')     return handleResaSubmit(interaction);
+      if (interaction.customId === 'maj_submit')      return handleMajSubmit(interaction);
+      if (interaction.customId === 'conflit_modal1')  return handleConflitModal1(interaction);
+      if (interaction.customId === 'conflit_modal2')  return handleConflitModal2(interaction);
     }
   },
 };

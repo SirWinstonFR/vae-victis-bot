@@ -2,6 +2,7 @@ const { roles, channels } = require('../config/config');
 const { sendWelcomeGeneral } = require('../utils/welcome');
 const { handleStaffImage } = require('../utils/reservation');
 const { handleMajMessage, handleBienvenueImage } = require('../utils/maj');
+const { handleConflitMessage } = require('../utils/conflit');
 
 const CHANNEL_STAFF = '1512195689176764508';
 
@@ -74,6 +75,11 @@ module.exports = {
       // Bienvenue dieu : bannière
       if (message.attachments.size > 0) {
         if (await handleBienvenueImage(message)) return;
+      }
+
+      // Conflit : image de couverture / PNJ
+      if (message.attachments.size > 0 || message.content.trim().toLowerCase() === 'skip') {
+        if (await handleConflitMessage(message)) return;
       }
 
       // MAJ : images ou skip

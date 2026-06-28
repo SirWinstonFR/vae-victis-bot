@@ -62,7 +62,7 @@ module.exports = {
         new TextDisplayBuilder().setContent(
           `## ⚔️ Un petit coucou de Vae Victis\n\n` +
           `Salut ${joueur} !\n\n` +
-          `Nous sommes à environ une semaine de l'ouverture, et on a remarqué que tu n'avais pas encore franchi le pas pour ta divinité. ` +
+          `Nous sommes désormais dans l'ouverture, et on a remarqué que tu n'avais pas encore franchi le pas pour ta divinité. ` +
           `Pas de souci, on voulait simplement prendre des nouvelles et voir comment on peut t'accompagner au mieux. 💫\n\n` +
           `Si tu hésites encore, n'hésite pas à jeter un œil à tout ce qu'on a préparé — le contexte, l'univers, les factions — ça vaut le détour !\n\n` +
           `Et si tu as une idée de divinité qui te ferait plaisir d'incarner, n'hésite pas à nous en parler ici, ou à consulter notre liste de divinités prioritaires.\n\n` +
