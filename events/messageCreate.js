@@ -3,6 +3,8 @@ const { sendWelcomeGeneral } = require('../utils/welcome');
 const { handleStaffImage } = require('../utils/reservation');
 const { handleMajMessage, handleBienvenueImage } = require('../utils/maj');
 const { handleConflitMessage } = require('../utils/conflit');
+const { handleTupperMessage } = require('../utils/personnages');
+const { createAccueilChannel } = require('../utils/accueil');
 
 const CHANNEL_STAFF = '1512195689176764508';
 
@@ -11,6 +13,9 @@ module.exports = {
 
   async execute(message, client) {
     if (message.author.bot) return;
+
+    // ── Tupper : personnages RP ────────────────────────────────────────
+    if (await handleTupperMessage(message)) return;
 
     // ── Vérification captcha ───────────────────────────────────────────
     if (message.channelId === channels.verification) {
@@ -43,6 +48,7 @@ module.exports = {
         setTimeout(() => confirm.delete().catch(() => {}), 5000);
 
         await sendWelcomeGeneral(member);
+        await createAccueilChannel(member);
 
         const logChannel = message.guild.channels.cache.get(channels.logs);
         if (logChannel) logChannel.send(`✅ **${message.author.tag}** s'est vérifié via captcha.`);
